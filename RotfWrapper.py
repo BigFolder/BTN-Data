@@ -27,7 +27,7 @@ Will likely end up
 
 def get_market() -> dict:
     urllib3_cn.allowed_gai_family = allowed_gai_family
-    data = requests.get("https://api.rotf.io/market/listings").json()
+    data = requests.get("https://playbtn.com/api/market/listings").json()
 
     return {"WIP": "WIP"}
 
@@ -138,7 +138,7 @@ def get_account(name: str) -> dict or str:
     if isOutdated:
         try:
             urllib3_cn.allowed_gai_family = allowed_gai_family
-            data = requests.get("https://api.rotf.io/account/info/by-name/" + name).json()
+            data = requests.get("https://playbtn.com/api/account/info/by-name/" + name).json()
         except ValueError:
             return "The name does not exist. Or the API is down."
 
@@ -169,7 +169,7 @@ def update_rating(name: str, rating: int) -> int or str:
     # Determine username viability (Is the name real?)
     urllib3_cn.allowed_gai_family = allowed_gai_family
     try:
-        data = requests.get("https://api.rotf.io/account/info/by-name/" + name).json()
+        data = requests.get("https://playbtn.com/api/account/info/by-name/" + name).json()
     except ValueError:
         return "The name does not exist. Or the API is down."
 
