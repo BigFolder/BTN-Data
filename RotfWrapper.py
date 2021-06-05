@@ -3,7 +3,7 @@ from datetime import datetime
 import RotfDatabase as RDB
 import socket
 import requests.packages.urllib3.util.connection as urllib3_cn
-
+#
 '''
 Used to force IPV4 as IPV6 has issues right now requests defaults to ipv6 causing LARGE time delays in requests
 '''
