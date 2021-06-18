@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import RotfWrapper as RW
+from rotfAPI import RotfWrapper as RW
 import os
 from dotenv import load_dotenv
 
@@ -54,6 +54,25 @@ async def rate(ctx, name, rating):
         await ctx.send(response)
     else:
         await ctx.send(response)
+
+
+@client.command()
+async def bulk(ctx, *args):
+    args = list(args)
+
+    for k in args:
+
+        name = k[1:-2]
+        if "'" in name:
+            get_ind = name.index("'")
+            if get_ind == 0:
+                name = name[1:]
+            else:
+                name = name[:-2]
+
+        RW.get_account(str.capitalize(name))
+
+    await ctx.send("Player List Updated")
 
 
 client.run(DISCORD_TOKEN)

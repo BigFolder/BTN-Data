@@ -1,8 +1,9 @@
 import requests
 from datetime import datetime
-import RotfDatabase as RDB
+from rotfDatabase import RotfDatabase as RDB
 import socket
 import requests.packages.urllib3.util.connection as urllib3_cn
+import json
 #
 '''
 Used to force IPV4 as IPV6 has issues right now requests defaults to ipv6 causing LARGE time delays in requests
@@ -17,6 +18,8 @@ def allowed_gai_family():
     return family
 
 
+urllib3_cn.allowed_gai_family = allowed_gai_family
+
 '''
 Creates request to api for market Data
 Not in-game yet.
@@ -26,7 +29,6 @@ Will likely end up
 
 
 def get_market() -> dict:
-    urllib3_cn.allowed_gai_family = allowed_gai_family
     data = requests.get("https://playbtn.com/api/market/listings").json()
 
     return {"WIP": "WIP"}
@@ -50,18 +52,20 @@ def clean_items(inv: dict) -> dict:
     count = 0
     charEquips = {}
     charInventory = {}
+    with open('C:/Users/19787/PycharmProjects/rotfDiscord/rotfDiscord/dict.json') as f:
+        data = json.load(f)
 
-    for item in inv['items']:
-        # Filler IDK what data they will add.
-        item = item['itemType']
-        if count <= equipped:
-            charEquips.update({str(count): item})
-            count += 1
-        else:
-            charInventory.update({str(count): item})
-            count += 1
+        for item in inv['items']:
+            # Filler IDK what data they will add.
+            item = item['itemType']
+            if count <= equipped:
+                charEquips.update({str(count): data[str(item)]})
+                count += 1
+            else:
+                charInventory.update({str(count): data[str(item)]})
+                count += 1
 
-    return {"equipped": charEquips, "inventory": charInventory}
+        return {"equipped": charEquips, "inventory": charInventory}
 
 
 '''
@@ -83,16 +87,19 @@ def get_stats(charData: dict, classID: str) -> dict:
                            'vitality': 40, 'wisdom': 50, 'dexterity': 50, 'haste': 300},
                 "Cleric": {'maxHP': 670, 'maxMP': 385, 'attack': 60, 'defense': 25, 'speed': 55,
                            'vitality': 40, 'wisdom': 75, 'dexterity': 60, 'haste': 300},
-                "Warrior": {'maxHP': 725, 'maxMP': 252, 'attack': 55, 'defense': 30, 'speed': 50,
+                "Warrior": {'maxHP': 855, 'maxMP': 252, 'attack': 55, 'defense': 30, 'speed': 50,
                             'vitality': 60, 'wisdom': 50, 'dexterity': 65, 'haste': 300},
                 "Wizard": {'maxHP': 670, 'maxMP': 385, 'attack': 75, 'defense': 25, 'speed': 50,
-                           'vitality': 40, 'wisdom': 60, 'dexterity': 75, 'haste': 300}}
+                           'vitality': 40, 'wisdom': 60, 'dexterity': 75, 'haste': 300},
+                "PH": {'maxHP': 670, 'maxMP': 385, 'attack': 75, 'defense': 25, 'speed': 50,
+                           'vitality': 40, 'wisdom': 60, 'dexterity': 75, 'haste': 300} }
 
     CLMAX = MAXSTATS[classID]
     stats = {}
     current = 0
     for stat in CLMAX:
         if charData[stat] == CLMAX[stat]:
+            #print(charData[stat], stat)
             stats.update({stat: "MAX"})
             current += 1
         else:
@@ -110,7 +117,9 @@ Returns the unique characters an account has
 def get_characters(account: dict) -> list:
     characters = []
     classNames = {2: "Hunter", 3: "Cleric",
-                  0: "Wizard", 1: "Warrior"}
+                  0: "Wizard", 1: "Warrior",
+                  4: "PH", 5: "PH",
+                  6: "PH", 7: "PH"}
     for char in account:
         className = classNames[char['classType']]
         skinType = char['skinType']
@@ -137,7 +146,6 @@ def get_account(name: str) -> dict or str:
 
     if isOutdated:
         try:
-            urllib3_cn.allowed_gai_family = allowed_gai_family
             data = requests.get("https://playbtn.com/api/account/info/by-name/" + name).json()
         except ValueError:
             return "The name does not exist. Or the API is down."
@@ -167,9 +175,8 @@ def get_account(name: str) -> dict or str:
 
 def update_rating(name: str, rating: int) -> int or str:
     # Determine username viability (Is the name real?)
-    urllib3_cn.allowed_gai_family = allowed_gai_family
     try:
-        data = requests.get("https://playbtn.com/api/account/info/by-name/" + name).json()
+        requests.get("https://playbtn.com/api/account/info/by-name/" + name).json()
     except ValueError:
         return "The name does not exist. Or the API is down."
 
