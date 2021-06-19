@@ -101,3 +101,56 @@ def get_rating(character: str) -> int or str:
             return i["Rating"]
     else:
         return "Character Undiscovered"
+
+
+def view_loots() -> dict:
+    mydb = client["rotfDataBase"]
+    mycol = mydb["loots"]
+    return mycol.find()
+
+
+def view_deaths() -> dict:
+    mydb = client["rotfDataBase"]
+    mycol = mydb["deaths"]
+    return mycol.find()
+
+
+def get_monster_counts() -> dict:
+    mydb = client["rotfDataBase"]
+    mycol = mydb["characterLookup"]
+    mycol = mydb["deaths"]
+    agg_result = mycol.aggregate([{
+        "$group": {"_id": "$killed_by", "Kills": {"$sum": 1}}}, {"$sort": {"Kills": -1}}])
+
+    return agg_result
+
+
+def get_player_deaths() -> dict:
+    mydb = client["rotfDataBase"]
+    mycol = mydb["deaths"]
+
+    agg_result = mycol.aggregate([{"$match": {"player_name": {"$ne": "mike"}}},
+                                  {"$group": {"_id": "$killed_by", "Kills": {"$sum": 1}}},
+                                  {"$sort": {"Kills": -1}}])
+
+    return agg_result
+
+
+def get_item_counts() -> dict:
+    mydb = client["rotfDataBase"]
+    mycol = mydb["loots"]
+    agg_result = mycol.aggregate([{"$match": {"player_name": {"$ne": "mike"}}},
+                                  {"$group": {"_id": "$item_name", "Dropped": {"$sum": 1}}},
+                                  {"$sort": {"Dropped": -1}}])
+
+    return agg_result
+
+
+def get_item_rank_counts() -> dict:
+    mydb = client["rotfDataBase"]
+    mycol = mydb["loots"]
+    agg_result = mycol.aggregate([{"$match": {"player_name": {"$ne": "mike"}}},
+                                  {"$group": {"_id": "$item_rank", "Dropped": {"$sum": 1}, }},
+                                  {"$sort": {"Dropped": -1}}])
+
+    return agg_result

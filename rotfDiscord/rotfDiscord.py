@@ -75,4 +75,15 @@ async def bulk(ctx, *args):
     await ctx.send("Player List Updated")
 
 
+@client.command()
+async def graph(ctx, req):
+
+    chart = RW.get_chart(req)
+
+    await ctx.send(chart)
+
+
+
+
+
 client.run(DISCORD_TOKEN)

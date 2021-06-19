@@ -36,22 +36,27 @@ def insert_death(character):
 
 
 async def build_conns():
+    try:
+        async with websockets.connect("wss://playbtn.com:2096") as websocket:
 
-    async with websockets.connect("wss://playbtn.com:2096") as websocket:
+            await websocket.send(json.dumps({"request": "subscribe", "event": "death"}))
+            await websocket.send(json.dumps({"request": "subscribe", "event": "announce"}))
+            await websocket.send(json.dumps({"request": "subscribe", "event": "loot"}))
 
-        await websocket.send(json.dumps({"request": "subscribe", "event": "death"}))
-        await websocket.send(json.dumps({"request": "subscribe", "event": "announce"}))
-        await websocket.send(json.dumps({"request": "subscribe", "event": "loot"}))
-
-        while True:
-            result = await websocket.recv()
-            result = json.loads(result)
-            if result["event_type"] == "loot":
-                insert_loot(result)
-            elif result["event_type"] == "death":
-                insert_death(result)
-            else:
-                print("We're here?", result)
+            while True:
+                result = await websocket.recv()
+                result = json.loads(result)
+                if result["event_type"] == "loot":
+                    print(result, datetime.now())
+                    insert_loot(result)
+                elif result["event_type"] == "death":
+                    print(result, datetime.now())
+                    insert_death(result)
+                else:
+                    print("We're here?", result)
+    except:
+        print("Socket Error")
+        asyncio.run(build_conns())
 
 try:
     asyncio.run(build_conns())

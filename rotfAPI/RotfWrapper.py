@@ -4,7 +4,8 @@ from rotfDatabase import RotfDatabase as RDB
 import socket
 import requests.packages.urllib3.util.connection as urllib3_cn
 import json
-#
+from quickchart import QuickChart
+
 '''
 Used to force IPV4 as IPV6 has issues right now requests defaults to ipv6 causing LARGE time delays in requests
 '''
@@ -92,14 +93,13 @@ def get_stats(charData: dict, classID: str) -> dict:
                 "Wizard": {'maxHP': 670, 'maxMP': 385, 'attack': 75, 'defense': 25, 'speed': 50,
                            'vitality': 40, 'wisdom': 60, 'dexterity': 75, 'haste': 300},
                 "PH": {'maxHP': 670, 'maxMP': 385, 'attack': 75, 'defense': 25, 'speed': 50,
-                           'vitality': 40, 'wisdom': 60, 'dexterity': 75, 'haste': 300} }
+                           'vitality': 40, 'wisdom': 60, 'dexterity': 75, 'haste': 300}}
 
     CLMAX = MAXSTATS[classID]
     stats = {}
     current = 0
     for stat in CLMAX:
         if charData[stat] == CLMAX[stat]:
-            #print(charData[stat], stat)
             stats.update({stat: "MAX"})
             current += 1
         else:
@@ -199,3 +199,134 @@ def update_rating(name: str, rating: int) -> int or str:
             return "This rating is invalid."
     else:
         return existing_char
+
+
+def get_chart(req):
+    if req == "deaths":
+        death_counts = RDB.get_monster_counts()
+        monsters = []
+        kills = []
+        for k in death_counts:
+            if k['_id'] != "mike":
+                monsters.append(k['_id'])
+                kills.append(k['Kills'])
+
+        qc = QuickChart()
+        qc.width = 500
+        qc.height = 300
+        qc.device_pixel_ratio = 2.0
+        qc.config = {
+            "type": "bar",
+            "data": {
+                "labels": monsters,
+                "datasets": [{
+                    "label": "Monster Kills",
+                    "data": kills
+
+                }]
+            }
+        }
+
+        return qc.get_short_url()
+    elif req == "loots":
+        loot_counts = RDB.get_item_counts()
+        name = []
+        count = []
+        for k in loot_counts:
+            if k['_id'] != "mike":
+                name.append(k['_id'])
+                count.append(k['Dropped'])
+
+        qc = QuickChart()
+        qc.width = 500
+        qc.height = 300
+        qc.device_pixel_ratio = 2.0
+        qc.config = {
+            "type": "bar",
+            "data": {
+                "labels": name,
+                "datasets": [{
+                    "label": "Loots Dropped",
+                    "data": count
+
+                }]
+            }
+        }
+
+        return qc.get_short_url()
+    elif req == "players":
+        player_counts = RDB.get_player_deaths()
+        name = []
+        count = []
+        for k in player_counts:
+            if k['_id'] != "mike":
+                name.append(k['_id'])
+                count.append(k['Deaths'])
+
+        qc = QuickChart()
+        qc.width = 500
+        qc.height = 300
+        qc.device_pixel_ratio = 2.0
+        qc.config = {
+            "type": "violin",
+            "data": {
+                "labels": name,
+                "datasets": [{
+                    "label": "Player Deaths",
+                    "data": count
+
+                }]
+            }
+        }
+        return qc.get_short_url()
+    elif req == "ratio":
+        death_counts = RDB.get_monster_counts()
+        loot_counts = list(RDB.get_item_rank_counts())
+        total_deaths = 0
+        for k in death_counts:
+            total_deaths += k['Kills']
+
+        total_legendaries = loot_counts[0]['Dropped']
+        total_primals = loot_counts[1]['Dropped']
+
+        tot = total_deaths + total_primals + total_legendaries
+
+        lege_perc = round(total_legendaries / tot * 100)
+        primal_perc = round(total_primals / tot * 100)
+        death_perc = round(total_deaths / tot * 100)
+
+        qc = QuickChart()
+        qc.width = 500
+        qc.height = 300
+        qc.device_pixel_ratio = 2.0
+        qc.config = {
+            "type": "pie",
+            "data": {
+                "labels": ["Legendaries", "Primals", "Deaths"],
+                "datasets": [{
+                    "label": "Game Ratios",
+                    "data": [lege_perc, primal_perc, death_perc],
+                    "backgroundColor": ['rgb(54, 162, 235)', 'rgb(255, 159, 64)', 'rgb(255, 99, 132)'],
+
+                }]
+            },
+            "options": {
+                    "title": {
+                      "display": True,
+                      "text": 'Current BTN Loot & Death Ratios'
+                    },
+                "plugins": {
+                      "datalabels": {
+                        "display": True,
+                        "font": {
+                          "size": 15,
+                          "color": "#000"
+                        }
+                      }
+                }
+            }
+        }
+        return qc.get_short_url()
+
+    else:
+        return "Invalid input (deaths, loots, players"
