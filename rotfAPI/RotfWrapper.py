@@ -93,7 +93,7 @@ def get_stats(charData: dict, classID: str) -> dict:
                 "Wizard": {'maxHP': 670, 'maxMP': 385, 'attack': 75, 'defense': 25, 'speed': 50,
                            'vitality': 40, 'wisdom': 60, 'dexterity': 75, 'haste': 300},
                 "PH": {'maxHP': 670, 'maxMP': 385, 'attack': 75, 'defense': 25, 'speed': 50,
-                           'vitality': 40, 'wisdom': 60, 'dexterity': 75, 'haste': 300}}
+                       'vitality': 40, 'wisdom': 60, 'dexterity': 75, 'haste': 300}}
 
     CLMAX = MAXSTATS[classID]
     stats = {}
@@ -173,6 +173,11 @@ def get_account(name: str) -> dict or str:
         return accountData
 
 
+'''
+Updates a users rating, will be used later to help find matching/similar users.
+'''
+
+
 def update_rating(name: str, rating: int) -> int or str:
     # Determine username viability (Is the name real?)
     try:
@@ -206,10 +211,15 @@ def get_chart(req):
         death_counts = RDB.get_monster_counts()
         monsters = []
         kills = []
+        count = 0
         for k in death_counts:
-            if k['_id'] != "mike":
-                monsters.append(k['_id'])
-                kills.append(k['Kills'])
+            if count <= 9:
+                if k['_id'] != "mike":
+                    monsters.append(k['_id'])
+                    kills.append(k['Kills'])
+                    count += 1
+            else:
+                break
 
         qc = QuickChart()
         qc.width = 500
@@ -221,21 +231,30 @@ def get_chart(req):
                 "labels": monsters,
                 "datasets": [{
                     "label": "Monster Kills",
-                    "data": kills
+                    "data": kills,
+                    "backgroundColor": ['#996600', '#b37700', '#cc8800', '#e69900', '#ffaa00',
+                                        '#ffb31a', '#ffbb33', '#ffc34d', '#ffcc66', '#ffd480']
 
                 }]
             }
         }
 
         return qc.get_short_url()
+
     elif req == "loots":
         loot_counts = RDB.get_item_counts()
         name = []
-        count = []
+        dropped = []
+        count = 0
         for k in loot_counts:
-            if k['_id'] != "mike":
-                name.append(k['_id'])
-                count.append(k['Dropped'])
+            if count <= 9:
+                if k['_id'] != "mike":
+
+                    name.append(k['_id'])
+                    dropped.append(k['Dropped'])
+                    count += 1
+            else:
+                break
 
         qc = QuickChart()
         qc.width = 500
@@ -247,13 +266,16 @@ def get_chart(req):
                 "labels": name,
                 "datasets": [{
                     "label": "Loots Dropped",
-                    "data": count
+                    "data": dropped,
+                    "backgroundColor": ['#996600', '#b37700', '#cc8800', '#e69900', '#ffaa00',
+                                        '#ffb31a', '#ffbb33', '#ffc34d', '#ffcc66', '#ffd480']
 
                 }]
             }
         }
 
         return qc.get_short_url()
+
     elif req == "players":
         player_counts = RDB.get_player_deaths()
         name = []
@@ -279,7 +301,55 @@ def get_chart(req):
             }
         }
         return qc.get_short_url()
-    elif req == "ratio":
+
+    elif req == "ratio_flat":
+        death_counts = RDB.get_monster_counts()
+        loot_counts = list(RDB.get_item_rank_counts())
+        total_deaths = 0
+        for k in death_counts:
+            total_deaths += k['Kills']
+
+        total_legendaries = loot_counts[0]['Dropped']
+        total_primals = loot_counts[1]['Dropped']
+
+        tot = total_deaths + total_primals + total_legendaries
+
+        lege_perc = round(total_legendaries / tot * 100)
+        primal_perc = round(total_primals / tot * 100)
+        death_perc = round(total_deaths / tot * 100)
+
+        qc = QuickChart()
+        qc.width = 500
+        qc.height = 300
+        qc.device_pixel_ratio = 2.0
+        qc.config = {
+            "type": "pie",
+            "data": {
+                "labels": ["Legendaries", "Primals", "Deaths"],
+                "datasets": [{
+                    "label": "Game Ratios",
+                    "data": [total_legendaries, total_primals, total_deaths],
+                    "backgroundColor": ['rgb(54, 162, 235)', 'rgb(255, 159, 64)', 'rgb(255, 99, 132)'],
+
+                }]
+            },
+            "options": {
+                    "title": {
+                      "display": True,
+                      "text": 'Current BTN Loot & Death Ratios'
+                    },  "plugins": {
+                      "datalabels": {
+                        "display": True,
+                        "font": {
+                          "size": 15,
+                          "color": "#000"
+                        }
+                                    }
+                            }
+            }
+        }
+        return qc.get_short_url()
+    elif req == "ratio_perc":
         death_counts = RDB.get_monster_counts()
         loot_counts = list(RDB.get_item_rank_counts())
         total_deaths = 0
@@ -314,19 +384,18 @@ def get_chart(req):
                     "title": {
                       "display": True,
                       "text": 'Current BTN Loot & Death Ratios'
-                    },
-                "plugins": {
+                    },  "plugins": {
                       "datalabels": {
                         "display": True,
                         "font": {
                           "size": 15,
                           "color": "#000"
                         }
-                      }
-                }
+                                    }
+                            }
             }
         }
         return qc.get_short_url()
 
     else:
-        return "Invalid input (deaths, loots, players"
+        return "Invalid input (deaths, loots, ratio_flat, ratio_perc)"

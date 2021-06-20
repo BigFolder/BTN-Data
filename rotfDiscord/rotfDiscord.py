@@ -79,7 +79,6 @@ async def bulk(ctx, *args):
 async def graph(ctx, req):
 
     chart = RW.get_chart(req)
-
     await ctx.send(chart)
 
 
