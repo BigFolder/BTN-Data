@@ -47,6 +47,11 @@ async def lookup(ctx, name: str):
         await ctx.send(embed=embed)
 
 
+'''
+Give a player a rating preferred (0-5)
+'''
+
+
 @client.command()
 async def rate(ctx, name, rating):
     response = RW.update_rating(name, int(rating))
@@ -54,6 +59,12 @@ async def rate(ctx, name, rating):
         await ctx.send(response)
     else:
         await ctx.send(response)
+
+
+'''
+Do a BULK update of players given a list [player1, player2, ...]
+finicky, will fix later
+'''
 
 
 @client.command()
@@ -73,6 +84,16 @@ async def bulk(ctx, *args):
         RW.get_account(str.capitalize(name))
 
     await ctx.send("Player List Updated")
+
+
+'''
+Returns a quickchart.io graph depending on parameter given
+!graph loots -> Returns a bar chart of the agg.count of each legendary/primal item (showing top 10)
+!graph deaths -> Returns a bar chart of the agg.count of each Monsters kill count (showing top 10)
+!graph ratio_flat -> Returns a pie chart of the agg.count of TOTAL Deaths, Primal and Legendary Drops
+!graph ratio_perc -> Returns a pie chart of the agg.count of the PERCENT TOTAL Deaths, Primal and Legendary Drop
+!graph players -> WIP will return total drops, deaths of each player graph-type undetermined.
+'''
 
 
 @client.command()
