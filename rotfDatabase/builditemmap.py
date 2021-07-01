@@ -11,6 +11,6 @@ for i in range(max):
 	itemMap.update({str(i): req['name']})
 
 json = json.dumps(itemMap)
-f = open("../rotfDiscord/dict.json", "w")
+f = open("../rotfAPI/dict.json", "w")
 f.write(json)
 f.close()

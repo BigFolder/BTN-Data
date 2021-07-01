@@ -204,13 +204,11 @@ ORDER BY Kills DESC
 '''
 
 
-def get_player_deaths() -> dict:
+def get_player_deaths(name) -> dict:
     mydb = client["rotfDataBase"]
     mycol = mydb["deaths"]
 
-    agg_result = mycol.aggregate([{"$match": {"player_name": {"$ne": "mike"}}},
-                                  {"$group": {"_id": "$killed_by", "Kills": {"$sum": 1}}},
-                                  {"$sort": {"Kills": -1}}])
+    agg_result = mycol.count_documents({"player_name": {'$eq': name}})
 
     return agg_result
 
@@ -258,3 +256,5 @@ def get_item_rank_counts() -> dict:
                                   {"$sort": {"Dropped": -1}}])
 
     return agg_result
+
+

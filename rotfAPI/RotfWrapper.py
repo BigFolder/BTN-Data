@@ -4,7 +4,7 @@ from rotfDatabase import RotfDatabase as RDB
 import socket
 import requests.packages.urllib3.util.connection as urllib3_cn
 import json
-from quickchart import QuickChart
+from quickchart import QuickChart, QuickChartFunction
 
 '''
 Used to force IPV4 as IPV6 has issues right now requests defaults to ipv6 causing LARGE time delays in requests
@@ -25,7 +25,6 @@ urllib3_cn.allowed_gai_family = allowed_gai_family
 Creates request to api for market Data
 Not in-game yet.
 
-Will likely end up 
 '''
 
 
@@ -48,25 +47,32 @@ Returns a Dict.
 
 def clean_items(inv: dict) -> dict:
     # Inventory length currently capped at 12 (No Backpacks, Equips still 4 (weapon,armor,ability,jewelry)
-    # print(len(inv['items']))
     equipped = 3
     count = 0
     charEquips = {}
     charInventory = {}
-    with open('C:/Users/19787/PycharmProjects/rotfDiscord/rotfDiscord/dict.json') as f:
+    dump = []
+    ITEM_DICT = "C:/Users/19787/PycharmProjects/rotfDiscord/rotfAPI/dict.json"
+    with open(ITEM_DICT) as f:
         data = json.load(f)
 
-        for item in inv['items']:
+        for i in inv['items']:
             # Filler IDK what data they will add.
-            item = item['itemType']
+            item = i['itemType']
             if count <= equipped:
-                charEquips.update({str(count): data[str(item)]})
+                charEquips.update({data[str(item)]: str(count)})
+                dump.append(data[str(item)])
                 count += 1
             else:
-                charInventory.update({str(count): data[str(item)]})
-                count += 1
+                if data[str(item)] not in charInventory.keys():
+                    charInventory.update({data[str(item)]: 1})
+                    dump.append(data[str(item)])
+                else:
+                    charInventory[data[str(item)]] += 1
+                    dump.append(data[str(item)])
 
-        return {"equipped": charEquips, "inventory": charInventory}
+
+        return {"equipped": charEquips, "inventory": charInventory, "dump": dump}
 
 
 '''
@@ -155,14 +161,16 @@ def get_account(name: str) -> dict or str:
         playerFame = data['fame']
         playerChars = get_characters(data['characters'])
         rating = RDB.get_rating(playerName)
-
+        total_deaths = RDB.get_player_deaths(playerName)
         # Make Dictionary of the account data
         if rating == "Character Undiscovered":
             accountData = {"UID": UID, "playerName": playerName, "playerFame": playerFame,
-                           "playerCharacters": playerChars, "dateTime": datetime.now(), "rating": 0}
+                           "playerCharacters": playerChars, "dateTime": datetime.now(),
+                           "rating": 0, "total_deaths": total_deaths}
         else:
             accountData = {"UID": UID, "playerName": playerName, "playerFame": playerFame,
-                           "playerCharacters": playerChars, "dateTime": datetime.now(), "rating": rating}
+                           "playerCharacters": playerChars, "dateTime": datetime.now(),
+                           "rating": rating, "total_deaths": total_deaths}
 
         # Update the account data in MongoDB
         if isOutdated == "New":
@@ -387,15 +395,50 @@ def get_chart(req):
                     },  "plugins": {
                       "datalabels": {
                         "display": True,
+
                         "font": {
-                          "size": 15,
+                          "size": 18,
                           "color": "#000"
-                        }
-                                    }
-                            }
+                        },
+                         "formatter": QuickChartFunction('(val) => val + "%"')
+
+                      }
+                }
             }
         }
         return qc.get_short_url()
 
     else:
         return "Invalid input (deaths, loots, ratio_flat, ratio_perc)"
+
+
+def get_dump(account):
+    dump_sum = {}
+    legendary = ['Aegis of War', 'Aegishjalmur', "Anubis' Ankh", 'Asgardian Aegis',
+                 'Band of Truth', 'Cane of Trickery', 'Ceremonial Robes', 'Daylight Mantle',
+                 'Divine Authority', "Farmer's Belt", "Farmer's Hat", "Farmer's Overalls", 'Feather of Image',
+                 'Feather of the Scales', 'Gjallarhorn', "Grid's Pole", "Harvester's Medallion", 'Hay-Covered Needle',
+                 "Hela's Garments", "Heretic's Helm", 'Icy Baton', "Loki's Garbs", 'Mace of Heresy',
+                 'Mantle of Concept', 'Megingjarpar', 'Optic Occlusion', 'Perfect Truth', "Phantom's Bane",
+                 'Sagacity', "Scarecrow's Gown", 'Seaweed Brew', 'Staff of Ra', 'Sunlight Circlet', 'Tentacular Ring',
+                 'The Amalgamate', 'Unholy Disk', 'Wings of Fire']
+
+    primal = ['Draupner', 'Farmyard Candle', "Harvester's Affliction", "Hel's Massacre",
+              "Hela's Power", 'Mace of Heresy', "Sun's Devastation", 'Tainted Pitchfork',
+              'The Encephalon', 'Wall of Gore']
+
+
+    for char in account:
+        for item in char["items"]['dump']:
+            if item not in dump_sum:
+                if item in legendary:
+                    dump_sum.update({item: ["Legendary", 1]})
+                elif item in primal:
+                    dump_sum.update({item: ["Primal", 1]})
+                else:
+                    dump_sum.update({item: ["Meh", 1]})
+
+            else:
+                dump_sum[item][1] += 1
+
+    return dump_sum

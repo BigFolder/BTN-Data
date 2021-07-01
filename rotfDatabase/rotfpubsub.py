@@ -5,6 +5,7 @@ import pymongo
 from dotenv import load_dotenv
 import os
 from datetime import datetime
+import sys
 
 load_dotenv()
 MONGODB = os.getenv("MONGO_DATABASE")
@@ -30,7 +31,8 @@ def insert_death(character):
     mycol = mydb["deaths"]
 
     newinsert = {"player_name": character["player_name"],
-                 "killed_by": character['killed_by'], "datetime": datetime.now()}
+                 "killed_by": character['killed_by'],
+                 "datetime": datetime.now()}
 
     mycol.insert_one(newinsert)
 
@@ -55,14 +57,10 @@ async def build_conns():
                 else:
                     print("We're here?", result)
     except:
-        print("Socket Error")
-        asyncio.run(build_conns())
+        print("Socket Error", sys.exc_info()[0])
+        await main()
 
-try:
-    asyncio.run(build_conns())
-except:
-    print("ERROR OCCURRED")
-    asyncio.run(build_conns())
+async def main():
+    await build_conns()
 
-
-
+asyncio.run(main())

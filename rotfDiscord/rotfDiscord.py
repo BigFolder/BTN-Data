@@ -25,13 +25,12 @@ Lookup by player name
 async def lookup(ctx, name: str):
 
     account = RW.get_account(str.capitalize(name))
-
     if type(account) == str:
         await ctx.send(account)
     else:
         embed = discord.Embed(
             title=account['playerName'] + "\nRating: " + str(account['rating']),
-            description="Account Fame: " + str(account['playerFame']),
+            description="Account Fame: " + str(account['playerFame']) + "\nTotal Deaths: " + str(account['total_deaths']),
             colour=discord.Colour.blue()
         )
 
@@ -44,7 +43,7 @@ async def lookup(ctx, name: str):
                                 char['items']['equipped']) + "\n" + "Inventory" + str(char['items']['inventory']),
                             inline=False)
 
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, delete_after=300)
 
 
 '''
@@ -67,7 +66,7 @@ finicky, will fix later
 '''
 
 
-@client.command()
+@client.command(pass_context=True)
 async def bulk(ctx, *args):
     args = list(args)
 
@@ -83,6 +82,7 @@ async def bulk(ctx, *args):
 
         RW.get_account(str.capitalize(name))
 
+    await ctx.message.delete()
     await ctx.send("Player List Updated")
 
 
@@ -96,13 +96,38 @@ Returns a quickchart.io graph depending on parameter given
 '''
 
 
-@client.command()
+@client.command(pass_context=True)
 async def graph(ctx, req):
 
     chart = RW.get_chart(req)
-    await ctx.send(chart)
+    await ctx.message.delete()
+    await ctx.send(chart, delete_after=300)
 
 
+@client.command(pass_context=True)
+async def dump(ctx, name):
+    account = RW.get_account(str.capitalize(name))
+    await ctx.message.delete()
+    if type(account) == str:
+        await ctx.send(account)
+    else:
+        accountDump = RW.get_dump(account['playerCharacters'])
+
+        embed = discord.Embed(
+            title=account['playerName'] + "\nRating: " + str(account['rating']),
+            description="Account Fame: " + str(account['playerFame']) +
+                                               "\nTotal Deaths: " + str(account['total_deaths']),
+            colour=discord.Colour.blue()
+        )
+        lege_str = "```"
+        #Legendary_Embed = embed.add_field(name="Legendaries")
+        for item in accountDump:
+            if accountDump[item][0] == "Legendary" or accountDump[item][0] == "Primal":
+                lege_str += item+" x"+str(accountDump[item][1]) +"\n"
+
+        embed.add_field(name="Notable Items", value=lege_str+"```")
+
+        await ctx.send(embed=embed, delete_after=300)
 
 
 
