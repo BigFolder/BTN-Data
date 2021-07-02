@@ -3,6 +3,9 @@
 ### While this documentation is in regards to a MongoDB Cluster approach to data storage, I've added relatively simple SQL code into the python file docstrings for you to follow along if necessary.
 
 
+- **.env file**
+  - This file should contain your sensitive information (Cluster Database connection, Discord Bot Token, anything else you decide to add on)
+  
 - **BTNAPI**
   - BTNWrapper.py is a python3 wrapper for the BTN Rest API, see [BTN Swagger API](https://playbtn.com/swagger/index.html)
   - apiLogging.py was/is used to check for network issues when making a request, All Libraries currently switch default family from IPV6 TO IPV4 for the time being.
