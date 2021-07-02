@@ -1,10 +1,15 @@
 import requests
 from datetime import datetime
-from rotfDatabase import RotfDatabase as RDB
+from BTNDatabase import BTNDatabase as BDB
 import socket
 import requests.packages.urllib3.util.connection as urllib3_cn
 import json
 from quickchart import QuickChart, QuickChartFunction
+from dotenv import load_dotenv
+import os
+# GET ITEM DICTIONARY
+
+load_dotenv()
 
 '''
 Used to force IPV4 as IPV6 has issues right now requests defaults to ipv6 causing LARGE time delays in requests
@@ -52,7 +57,7 @@ def clean_items(inv: dict) -> dict:
     charEquips = {}
     charInventory = {}
     dump = []
-    ITEM_DICT = "C:/Users/19787/PycharmProjects/rotfDiscord/rotfAPI/dict.json"
+    ITEM_DICT = os.getenv("ITEM_DICT")
     with open(ITEM_DICT) as f:
         data = json.load(f)
 
@@ -148,7 +153,7 @@ Returns UID: UserID
 
 
 def get_account(name: str) -> dict or str:
-    isOutdated = RDB.check_character_last_update(name)
+    isOutdated = BDB.check_character_last_update(name)
 
     if isOutdated:
         try:
@@ -160,8 +165,8 @@ def get_account(name: str) -> dict or str:
         playerName = data['name']
         playerFame = data['fame']
         playerChars = get_characters(data['characters'])
-        rating = RDB.get_rating(playerName)
-        total_deaths = RDB.get_player_deaths(playerName)
+        rating = BDB.get_rating(playerName)
+        total_deaths = BDB.get_player_deaths(playerName)
         # Make Dictionary of the account data
         if rating == "Character Undiscovered":
             accountData = {"UID": UID, "playerName": playerName, "playerFame": playerFame,
@@ -174,9 +179,9 @@ def get_account(name: str) -> dict or str:
 
         # Update the account data in MongoDB
         if isOutdated == "New":
-            RDB.insert_character_data(accountData)
+            BDB.insert_character_data(accountData)
         else:
-            RDB.update_character_data(accountData)
+            BDB.update_character_data(accountData)
 
         return accountData
 
@@ -193,20 +198,20 @@ def update_rating(name: str, rating: int) -> int or str:
     except ValueError:
         return "The name does not exist. Or the API is down."
 
-    existing_char = RDB.get_rating(name)
+    existing_char = BDB.get_rating(name)
 
     if type(existing_char) == int:
 
         # Determine rating viability (Is the rating legit?)
         if type(rating) is int or type(rating) is float:
             if rating <= 0:
-                RDB.update_character_rating(name, int(0))
+                BDB.update_character_rating(name, int(0))
                 return name + " Rating has been updated"
             elif rating >= 5:
-                RDB.update_character_rating(name, int(5))
+                BDB.update_character_rating(name, int(5))
                 return name + " Rating has been updated"
             else:
-                RDB.update_character_rating(name, int(rating))
+                BDB.update_character_rating(name, int(rating))
                 return name + " Rating has been updated"
         else:
             return "This rating is invalid."
@@ -216,7 +221,7 @@ def update_rating(name: str, rating: int) -> int or str:
 
 def get_chart(req):
     if req == "deaths":
-        death_counts = RDB.get_monster_counts()
+        death_counts = BDB.get_monster_counts()
         monsters = []
         kills = []
         count = 0
@@ -250,7 +255,7 @@ def get_chart(req):
         return qc.get_short_url()
 
     elif req == "loots":
-        loot_counts = RDB.get_item_counts()
+        loot_counts = BDB.get_item_counts()
         name = []
         dropped = []
         count = 0
@@ -285,7 +290,7 @@ def get_chart(req):
         return qc.get_short_url()
 
     elif req == "players":
-        player_counts = RDB.get_player_deaths()
+        player_counts = BDB.get_player_deaths()
         name = []
         count = []
         for k in player_counts:
@@ -311,8 +316,8 @@ def get_chart(req):
         return qc.get_short_url()
 
     elif req == "ratio_flat":
-        death_counts = RDB.get_monster_counts()
-        loot_counts = list(RDB.get_item_rank_counts())
+        death_counts = BDB.get_monster_counts()
+        loot_counts = list(BDB.get_item_rank_counts())
         total_deaths = 0
         for k in death_counts:
             total_deaths += k['Kills']
@@ -358,8 +363,8 @@ def get_chart(req):
         }
         return qc.get_short_url()
     elif req == "ratio_perc":
-        death_counts = RDB.get_monster_counts()
-        loot_counts = list(RDB.get_item_rank_counts())
+        death_counts = BDB.get_monster_counts()
+        loot_counts = list(BDB.get_item_rank_counts())
         total_deaths = 0
         for k in death_counts:
             total_deaths += k['Kills']

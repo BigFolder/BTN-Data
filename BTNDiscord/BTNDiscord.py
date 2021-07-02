@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from rotfAPI import RotfWrapper as RW
+from BTNAPI import BTNWrapper as RW
 import os
 from dotenv import load_dotenv
 

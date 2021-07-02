@@ -1,5 +1,5 @@
-from rotfAPI import RotfWrapper as RW
-from rotfDatabase import RotfDatabase as RDB
+from BTNAPI import BTNWrapper as RW
+from rotfDatabase import BTNDatabase as RDB
 
 '''
 Testing for user input from discord arguments.
